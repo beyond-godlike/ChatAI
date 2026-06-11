@@ -1,10 +1,16 @@
 package com.example.chatai.presentation.chat
 
-import com.example.chatai.presentation.home.HomeScreenState
+import com.example.chatai.data.Message
 
-sealed class ChatState {
-    object Empty : ChatState()
-    data class Error(val e: String) : ChatState()
-    //data class Success(val answer: String) : ChatState()
-    data class Success(val messages: List<Message>) : ChatState()
+sealed interface ChatState {
+
+    data object Loading : ChatState
+
+    data class Success(
+        val messages: List<Message> = emptyList()
+    ) : ChatState
+
+    data class Error(
+        val message: String
+    ) : ChatState
 }

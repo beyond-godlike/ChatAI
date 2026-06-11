@@ -38,12 +38,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.chatai.data.Message
+import com.example.chatai.data.Sender
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(navController: NavController) {
     val viewModel: ChatViewModel = hiltViewModel()
-    val chatState by viewModel.state.collectAsState(remember { ChatState.Empty })
+    val chatState by viewModel.state.collectAsState(remember { ChatState.Loading })
 
 
     Scaffold(
@@ -55,9 +57,7 @@ fun ChatScreen(navController: NavController) {
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         when (chatState) {
-            is ChatState.Empty -> MessagesScreen(
-                viewModel,
-                emptyList(),
+            is ChatState.Loading -> LoadingScreen(
                 paddingValues = paddingValues
             )
 
@@ -75,6 +75,13 @@ fun ChatScreen(navController: NavController) {
 }
 
 @Composable
+fun LoadingScreen(paddingValues: PaddingValues) {
+    Text(
+        text = "LOADING"
+    )
+}
+
+@Composable
 fun MessagesScreen(
     viewModel: ChatViewModel,
     previousMessages: List<Message>,
@@ -89,7 +96,11 @@ fun MessagesScreen(
 
         MessageInput(onSendMessage = { text ->
             if (text.isNotBlank()) {
-                viewModel.dispatch(ChatIntent.Predict(Message(text, "Dia ")))
+                viewModel.dispatch(
+                    ChatIntent.SendMessage(
+                        text = text
+                    )
+                )
             }
         })
     }
@@ -161,17 +172,16 @@ fun MessageInput(onSendMessage: (String) -> Unit) {
 
 @Composable
 fun MessageItem(message: Message) {
-    val isUser = message.sender != "Dia"
-
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
+        horizontalArrangement = if (message.sender == Sender.USER)
+            Arrangement.End else Arrangement.Start
     ) {
         Box(
             modifier = Modifier
                 .padding(horizontal = 8.dp, vertical = 4.dp)
                 .background(
-                    color = if (isUser)
+                    color = if (message.sender == Sender.USER)
                         MaterialTheme.colorScheme.primary
                     else
                         MaterialTheme.colorScheme.surfaceVariant,
@@ -181,7 +191,7 @@ fun MessageItem(message: Message) {
         ) {
             Text(
                 text = message.text,
-                color = if (isUser)
+                color = if (message.sender == Sender.USER)
                     MaterialTheme.colorScheme.onPrimary
                 else
                     MaterialTheme.colorScheme.onSurface
