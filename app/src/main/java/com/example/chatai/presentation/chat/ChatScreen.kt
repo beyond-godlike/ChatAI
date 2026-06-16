@@ -40,6 +40,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.chatai.data.Message
 import com.example.chatai.data.Sender
+import formatTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -189,13 +190,25 @@ fun MessageItem(message: Message) {
                 )
                 .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
-            Text(
-                text = message.text,
-                color = if (message.sender == Sender.USER)
-                    MaterialTheme.colorScheme.onPrimary
-                else
-                    MaterialTheme.colorScheme.onSurface
-            )
+            Column {
+                Text(
+                    text = message.text,
+                    color = if (message.sender == Sender.USER)
+                        MaterialTheme.colorScheme.onPrimary
+                    else
+                        MaterialTheme.colorScheme.onSurface
+                )
+
+                Text(
+                    text = formatTime(message.timestamp),
+                    modifier = Modifier.align(Alignment.End),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (message.sender == Sender.USER)
+                        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+                    else
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+            }
         }
     }
 }

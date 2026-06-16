@@ -1,0 +1,41 @@
+package com.example.chatai.data.mappers
+
+import com.example.chatai.data.Message
+import com.example.chatai.data.MessageDto
+import com.example.chatai.data.Sender
+import com.example.chatai.data.local.MessageEntity
+
+fun MessageDto.toDomain(): Message {
+    return Message(
+        id = 0,
+        text = text,
+        sender = if (sender == "user") Sender.USER else Sender.ASSISTANT,
+        timestamp = timestamp
+    )
+}
+
+fun Message.toDto(): MessageDto {
+    return MessageDto(
+        text = text,
+        sender = sender.name.lowercase(),
+        timestamp = timestamp
+    )
+}
+
+fun Message.toEntity(): MessageEntity {
+    return MessageEntity(
+        id = id,
+        text = text,
+        sender = sender.name,
+        timestamp = timestamp
+    )
+}
+
+fun MessageEntity.toDomain(): Message {
+    return Message(
+        id = id,
+        text = text,
+        sender = Sender.valueOf(sender),
+        timestamp = timestamp
+    )
+}

@@ -2,11 +2,9 @@ package com.example.chatai.presentation.chat
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.chatai.data.ChatApi
 import com.example.chatai.data.Message
 import com.example.chatai.data.Sender
-import com.example.chatai.data.toDomain
-import com.example.chatai.data.toDto
+import com.example.chatai.data.repository.ChatRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,9 +14,18 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class ChatViewModel @Inject constructor(private val api: ChatApi) : ViewModel() {
+class ChatViewModel @Inject constructor(
+    private val repo: ChatRepository
+) : ViewModel() {
     private val _state = MutableStateFlow<ChatState>(ChatState.Success(emptyList()))
     val state: StateFlow<ChatState> = _state.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            val history = repo.loadHistory()
+            _state.value = ChatState.Success(history)
+        }
+    }
 
     fun dispatch(intent: ChatIntent) {
         when (intent) {
@@ -28,8 +35,9 @@ class ChatViewModel @Inject constructor(private val api: ChatApi) : ViewModel() 
         }
     }
 
-    private fun sendMessage(text: String) {
+    fun sendMessage(text: String) {
         val userMessage = Message(
+            id = 0,
             text = text,
             sender = Sender.USER,
             timestamp = System.currentTimeMillis()
@@ -38,33 +46,20 @@ class ChatViewModel @Inject constructor(private val api: ChatApi) : ViewModel() 
         addMessage(userMessage)
 
         viewModelScope.launch {
-
-            runCatching {
-                api.sendMsg(
-                    userMessage.toDto()
-                )
-            }.onSuccess { response ->
-
-                response.body()
-                    ?.toDomain()
-                    ?.let(::addMessage)
-
-            }.onFailure { e ->
-
-                _state.value =
-                    ChatState.Error(e.message ?: "Unknown error")
+            try {
+                val response = repo.sendMessage(userMessage)
+                addMessage(response)
+            } catch (e: Exception) {
+                _state.value = ChatState.Error(e.message ?: "error")
             }
         }
     }
 
     private fun addMessage(message: Message) {
-        _state.update { currentState ->
-            if (currentState is ChatState.Success) {
-                currentState.copy(messages = currentState.messages + message)
-            } else {
-                currentState
-            }
+        _state.update { state ->
+            if (state is ChatState.Success) {
+                state.copy(messages = state.messages + message)
+            } else state
         }
     }
-
 }
